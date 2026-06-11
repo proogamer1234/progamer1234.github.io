@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anime Encyclopedia | Catchy & Fancy</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Playfair+Display:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- GSAP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <header class="header">
+            <h1 class="logo">ANIME<span>Z</span></h1>
+            <div class="search-container">
+                <input type="text" id="search-input" placeholder="Search for anime, characters..." autocomplete="off">
+                <button id="search-btn">
+                    <i data-lucide="search"></i>
+                </button>
+            </div>
+        </header>
+
+        <main class="content">
+            <div id="results-grid" class="results-grid">
+                <!-- Cards will be injected here -->
+            </div>
+            <div id="loader" class="loader hidden">
+                <div class="spinner"></div>
+                <p>Summoning data...</p>
+            </div>
+        </main>
+
+        <section id="details-overlay" class="details-overlay hidden">
+            <div class="overlay-backdrop"></div>
+            <div class="details-content">
+                <button id="close-details" class="close-btn">
+                    <i data-lucide="x"></i>
+                </button>
+                <div id="details-body" class="details-body">
+                    <!-- Details will be injected here -->
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
