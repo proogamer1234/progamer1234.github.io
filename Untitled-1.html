@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Newton's Cradle - PhET Style Simulation</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: linear-gradient(180deg, #e8f4f8 0%, #cfe8f0 100%);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 15px;
+    color: #1a3a52;
+  }
+  h1 {
+    font-size: 1.6rem;
+    color: #0b4f6c;
+    margin-bottom: 4px;
+    font-weight: 600;
+  }
+  .subtitle {
+    font-size: 0.85rem;
+    color: #456;
+    margin-bottom: 12px;
+  }
+  .app {
+    background: white;
+    border-radius: 14px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+    padding: 18px;
+    width: 100%;
+    max-width: 900px;
+  }
+  canvas {
+    width: 100%;
+    height: auto;
+    display: block;
+    background: linear-gradient(180deg, #f7fbfd 0%, #e3eef3 100%);
+    border-radius: 10px;
+    border: 1px solid #cfdde4;
+    cursor: grab;
+  }
+  canvas:active { cursor: grabbing; }
+
+  .panel {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-top: 14px;
+  }
+  @media (max-width: 600px) {
+    .panel { grid-template-columns: 1fr; }
+  }
+  .card {
+    background: #f5fafc;
+    border: 1px solid #d6e4ea;
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+  .card h3 {
+    font-size: 0.85rem;
+    color: #0b4f6c;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .slider-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 0.85rem;
+  }
+  .slider-row label { flex: 0 0 auto; color: #345; }
+  .slider-row input[type=range] {
+    flex: 1;
+    margin: 0 10px;
+    accent-color: #0b4f6c;
+  }
+  .slider-row .val {
+    min-width: 44px;
+    text-align: right;
+    font-weight: 600;
+    color: #0b4f6c;
+  }
+  .buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+  button {
+    flex: 1;
+    min-width: 90px;
+    padding: 9px 12px;
+    border: none;
+    border-radius: 7px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.2s;
+    color: white;
+  }
+  button:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+  button:active { transform: translateY(0); }
+  .btn-play { background: #2e8b57; }
+  .btn-pause { background: #d97706; }
+  .btn-reset { background: #c0392b; }
+  .btn-preset { background: #0b4f6c; }
+
+  .energy {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 0.8rem;
+  }
+  .energy-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .energy-bar .lbl { width: 60px; color: #456; }
+  .energy-bar .bar {
+    flex: 1;
+    height: 12px;
+    background: #e0e9ed;
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+  }
+  .energy-bar .fill {
+    height: 100%;
+    border-radius: 6px;
+    transition: width 0.05s linear;
+  }
+  .fill.ke { background: linear-gradient(90deg, #ff6b6b, #ee0979); }
+  .fill.pe { background: linear-gradient(90deg, #4facfe, #00f2fe); }
+  .fill.te { background: linear-gradient(90deg, #43e97b, #38f9d7); }
+  .energy-bar .num { width: 50px; text-align: right; font-weight: 600; color: #0b4f6c; }
+
+  .hint {
+    font-size: 0.75rem;
+    color: #678;
+    margin-top: 8px;
+    text-align: center;
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+  <h1>⚛ Newton's Cradle Simulation</h1>
+  <p class="subtitle">Explore conservation of momentum and energy</p>
+
+  <div class="app">
+    <canvas id="cv" width="860" height="420"></canvas>
+
+    <div class="panel">
+      <div class="card">
+        <h3>⚙ Parameters</h3>
+        <div class="slider-row">
+          <label>Gravity</label>
+          <input type="range" id="gravity" min="1" max="30" step="0.5" value="9.8">
+          <span class="val" id="gravityVal">9.8</span>
+        </div>
+        <div class="slider-row">
+          <label>Damping</label>
+          <input type="range" id="damping" min="0.9" max="1" step="0.001" value="0.999">
+          <span class="val" id="dampingVal">0.999</span>
+        </div>
+        <div class="slider-row">
+          <label>Balls</label>
+          <input type="range" id="nballs" min="2" max="9" step="1" value="5">
+          <span class="val" id="nballsVal">5</span>
+        </div>
+        <div class="slider-row">
+          <label>Ball Mass</label>
+          <input type="range" id="mass" min="0.5" max="3" step="0.1" value="1">
+          <span class="val" id="massVal">1.0</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>📊 Energy</h3>
+        <div class="energy">
+          <div class="energy-bar">
+            <span class="lbl">Kinetic</span>
+            <div class="bar"><div class="fill ke" id="keBar" style="width:0%"></div></div>
+            <span class="num" id="keNum">0.0</span>
+          </div>
+          <div class="energy-bar">
+            <span class="lbl">Potential</span>
+            <div class="bar"><div class="fill pe" id="peBar" style="width:0%"></div></div>
+            <span class="num" id="peNum">0.0</span>
+          </div>
+          <div class="energy-bar">
+            <span class="lbl">Total</span>
+            <div class="bar"><div class="fill te" id="teBar" style="width:0%"></div></div>
+            <span class="num" id="teNum">0.0</span>
+          </div>
+        </div>
+        <p class="hint">💡 Drag any ball with the mouse to set it in motion</p>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:14px;">
+      <h3>🎬 Presets & Controls</h3>
+      <div class="buttons">
+        <button class="btn-play" id="playBtn">▶ Play</button>
+        <button class="btn-pause" id="pauseBtn">⏸ Pause</button>
+        <button class="btn-reset" id="resetBtn">⟲ Reset</button>
+        <button class="btn-preset" onclick="preset(1)">1 Ball Left</button>
+        <button class="btn-preset" onclick="preset(2)">2 Balls Left</button>
+        <button class="btn-preset" onclick="preset(3)">3 Balls Left</button>
+        <button class="btn-preset" onclick="presetBoth()">Both Sides</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const canvas = document.getElementById('cv');
+  const ctx = canvas.getContext('2d');
+
+  // Logical size
+  const W = canvas.width;
+  const H = canvas.height;
+
+  // State
+  let params = {
+    gravity: 9.8,
+    damping: 0.999,
+    nBalls: 5,
+    mass: 1.0
+  };
+  let running = true;
+  let balls = [];
+  let dragging = -1;
+  let initialEnergy = 0.0001;
+
+  // Geometry
+  const PIVOT_Y = 50;
+  const STRING_LEN = 260;
+  const BALL_R = 24;
+  const SPACING = BALL_R * 2.02; // slight gap for visual clarity but collision at 2R
+
+  function buildBalls() {
+    balls = [];
+    const totalW = (params.nBalls - 1) * SPACING;
+    const startX = W / 2 - totalW / 2;
+    for (let i = 0; i < params.nBalls; i++) {
+      balls.push({
+        pivotX: startX + i * SPACING,
+        angle: 0,
+        angVel: 0
+      });
+    }
+    initialEnergy = 0.0001;
+  }
+
+  function ballPos(b) {
+    return {
+      x: b.pivotX + STRING_LEN * Math.sin(b.angle),
+      y: PIVOT_Y + STRING_LEN * Math.cos(b.angle)
+    };
+  }
+
+  // Physics step with substeps for stability
+  function step(dt) {
+    const sub = 4;
+    const h = dt / sub;
+    for (let s = 0; s < sub; s++) {
+      // integrate each pendulum (simple gravity pendulum)
+      for (let i = 0; i < balls.length; i++) {
+        if (i === dragging) continue;
+        const b = balls[i];
+        // α = -(g/L) sinθ ; scale: treat L in meters via factor
+        const L_m = STRING_LEN / 100; // convert px to meters (100px = 1m)
+        const alpha = -(params.gravity / L_m) * Math.sin(b.angle);
+        b.angVel += alpha * h;
+        b.angVel *= Math.pow(params.damping, h * 60);
+        b.angle += b.angVel * h;
+      }
+      // Collisions between adjacent balls
+      for (let i = 0; i < balls.length - 1; i++) {
+        const a = balls[i], b = balls[i+1];
+        const pa = ballPos(a), pb = ballPos(b);
+        const dx = pb.x - pa.x;
+        const dy = pb.y - pa.y;
+        const dist = Math.hypot(dx, dy);
+        const minDist = BALL_R * 2;
+        if (dist < minDist && dist > 0.0001) {
+          // Compute linear velocities at ball centers
+          const va_x = STRING_LEN * a.angVel * Math.cos(a.angle);
+          const va_y = -STRING_LEN * a.angVel * Math.sin(a.angle);
+          const vb_x = STRING_LEN * b.angVel * Math.cos(b.angle);
+          const vb_y = -STRING_LEN * b.angVel * Math.sin(b.angle);
+
+          // Normal
+          const nx = dx / dist, ny = dy / dist;
+          // Relative velocity along normal
+          const vrn = (vb_x - va_x) * nx + (vb_y - va_y) * ny;
+
+          if (vrn < 0) {
+            // Elastic collision (equal masses)
+            const m1 = params.mass, m2 = params.mass;
+            const j = -(1 + 1.0) * vrn / (1/m1 + 1/m2); // restitution = 1
+            const imp_x = j * nx, imp_y = j * ny;
+
+            // Convert impulse back to angular velocity change
+            // tangential direction for each pendulum: t = (cosθ, -sinθ)
+            const ta_x = Math.cos(a.angle), ta_y = -Math.sin(a.angle);
+            const tb_x = Math.cos(b.angle), tb_y = -Math.sin(b.angle);
+
+            // tangential component of impulse
+            const ja_t = (-imp_x) * ta_x + (-imp_y) * ta_y;
+            const jb_t = ( imp_x) * tb_x + ( imp_y) * tb_y;
+
+            a.angVel += ja_t / (params.mass * STRING_LEN);
+            b.angVel += jb_t / (params.mass * STRING_LEN);
+          }
+
+          // Positional correction: push apart along normal by adjusting angles
+          const overlap = minDist - dist;
+          // Approximate: move each pivot-equivalent angle
+          const corr = overlap / 2;
+          // Project correction onto each pendulum's tangential direction
+          const da = (-corr * nx * Math.cos(a.angle) + -corr * ny * -Math.sin(a.angle)) / STRING_LEN;
+          const db = ( corr * nx * Math.cos(b.angle) +  corr * ny * -Math.sin(b.angle)) / STRING_LEN;
+          if (i !== dragging) a.angle += da * 0.5;
+          if (i+1 !== dragging) b.angle += db * 0.5;
+        }
+      }
+    }
+  }
+
+  // Energy calculation
+  function computeEnergy() {
+    let KE = 0, PE = 0;
+    const L_m = STRING_LEN / 100;
+    for (const b of balls) {
+      const v = L_m * b.angVel; // m/s
+      KE += 0.5 * params.mass * v * v;
+      // height above lowest point: L(1 - cosθ)
+      const h = L_m * (1 - Math.cos(b.angle));
+      PE += params.mass * params.gravity * h;
+    }
+    return { KE, PE, TE: KE + PE };
+  }
+
+  // Drawing
+  function drawFrame() {
+    const first = balls[0], last = balls[balls.length-1];
+    const leftX = first.pivotX - BALL_R * 2.5;
+    const rightX = last.pivotX + BALL_R * 2.5;
+    const topY = PIVOT_Y - 14;
+    const baseY = H - 30;
+
+    // Base
+    ctx.fillStyle = '#3a4a5a';
+    ctx.fillRect(leftX - 20, baseY, rightX - leftX + 40, 10);
+
+    // Side supports
+    ctx.strokeStyle = '#4a5a6a';
+    ctx.lineWidth = 5;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(leftX, topY); ctx.lineTo(leftX - 15, baseY);
+    ctx.moveTo(rightX, topY); ctx.lineTo(rightX + 15, baseY);
+    ctx.stroke();
+
+    // Top bar
+    const grad = ctx.createLinearGradient(0, topY - 6, 0, topY + 6);
+    grad.addColorStop(0, '#8a9aa8');
+    grad.addColorStop(0.5, '#5a6a78');
+    grad.addColorStop(1, '#3a4a58');
+    ctx.fillStyle = grad;
+    ctx.fillRect(leftX - 5, topY - 6, rightX - leftX + 10, 12);
+  }
+
+  function drawString(b) {
+    const p = ballPos(b);
+    ctx.strokeStyle = '#556';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(b.pivotX - 2, PIVOT_Y);
+    ctx.lineTo(p.x, p.y);
+    ctx.moveTo(b.pivotX + 2, PIVOT_Y);
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+  }
+
+  function drawBall(b, idx) {
+    const p = ballPos(b);
+    // Shadow
+    ctx.beginPath();
+    ctx.ellipse(p.x + 3, p.y + BALL_R + 6, BALL_R * 0.8, 4, 0, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(0,0,0,0.18)';
+    ctx.fill();
+
+    // Ball
+    const g = ctx.createRadialGradient(
+      p.x - BALL_R * 0.35, p.y - BALL_R * 0.35, BALL_R * 0.1,
+      p.x, p.y, BALL_R
+    );
+    g.addColorStop(0, '#f5f5f5');
+    g.addColorStop(0.4, '#c8c8c8');
+    g.addColorStop(0.85, '#6a6a6a');
+    g.addColorStop(1, '#3a3a3a');
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, BALL_R, 0, Math.PI * 2);
+    ctx.fillStyle = g;
+    ctx.fill();
+
+    // Highlight
+    ctx.beginPath();
+    ctx.arc(p.x - BALL_R * 0.35, p.y - BALL_R * 0.4, BALL_R * 0.25, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+    ctx.fill();
+
+    // Index label
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.font = 'bold 11px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(idx + 1, p.x, p.y + BALL_R * 0.55);
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    drawFrame();
+    for (const b of balls) drawString(b);
+    for (let i = 0; i < balls.length; i++) drawBall(balls[i], i);
+  }
+
+  function updateEnergyUI() {
+    const e = computeEnergy();
+    if (e.TE > initialEnergy) initialEnergy = e.TE;
+    const maxE = Math.max(initialEnergy, 0.0001);
+    document.getElementById('keBar').style.width = Math.min(100, (e.KE / maxE) * 100) + '%';
+    document.getElementById('peBar').style.width = Math.min(100, (e.PE / maxE) * 100) + '%';
+    document.getElementById('teBar').style.width = Math.min(100, (e.TE / maxE) * 100) + '%';
+    document.getElementById('keNum').textContent = e.KE.toFixed(2);
+    document.getElementById('peNum').textContent = e.PE.toFixed(2);
+    document.getElementById('teNum').textContent = e.TE.toFixed(2);
+  }
+
+  let lastT = performance.now();
+  function loop(t) {
+    const dt = Math.min(0.033, (t - lastT) / 1000);
+    lastT = t;
+    if (running) step(dt);
+    draw();
+    updateEnergyUI();
+    requestAnimationFrame(loop);
+  }
+
+  // Interaction
+  function getMouse(e) {
+    const r = canvas.getBoundingClientRect();
+    const sx = canvas.width / r.width;
+    const sy = canvas.height / r.height;
+    const cx = (e.touches ? e.touches[0].clientX : e.clientX) - r.left;
+    const cy = (e.touches ? e.touches[0].clientY : e.clientY) - r.top;
+    return { x: cx * sx, y: cy * sy };
+  }
+
+  function onDown(e) {
+    e.preventDefault();
+    const m = getMouse(e);
+    for (let i = 0; i < balls.length; i++) {
+      const p = ballPos(balls[i]);
+      if (Math.hypot(m.x - p.x, m.y - p.y) < BALL_R * 1.5) {
+        dragging = i;
+        balls[i].angVel = 0;
+        break;
+      }
+    }
+  }
+  function onMove(e) {
+    if (dragging < 0) return;
+    e.preventDefault();
+    const m = getMouse(e);
+    const b = balls[dragging];
+    let ang = Math.atan2(m.x - b.pivotX, m.y - PIVOT_Y);
+    ang = Math.max(-Math.PI * 0.45, Math.min(Math.PI * 0.45, ang));
+    b.angle = ang;
+    b.angVel = 0;
+  }
+  function onUp() { dragging = -1; }
+
+  canvas.addEventListener('mousedown', onDown);
+  canvas.addEventListener('mousemove', onMove);
+  window.addEventListener('mouseup', onUp);
+  canvas.addEventListener('touchstart', onDown, { passive: false });
+  canvas.addEventListener('touchmove', onMove, { passive: false });
+  canvas.addEventListener('touchend', onUp);
+
+  // Controls
+  function bindSlider(id, key, fmt) {
+    const el = document.getElementById(id);
+    const vEl = document.getElementById(id + 'Val');
+    el.addEventListener('input', () => {
+      const v = parseFloat(el.value);
+      params[key] = v;
+      vEl.textContent = fmt ? fmt(v) : v;
+      if (key === 'nBalls') buildBalls();
+    });
+  }
+  bindSlider('gravity', 'gravity', v => v.toFixed(1));
+  bindSlider('damping', 'damping', v => v.toFixed(3));
+  bindSlider('nballs', 'nBalls', v => v);
+  bindSlider('mass', 'mass', v => v.toFixed(1));
+
+  document.getElementById('playBtn').onclick = () => running = true;
+  document.getElementById('pauseBtn').onclick = () => running = false;
+  document.getElementById('resetBtn').onclick = () => { buildBalls(); };
+
+  window.preset = function(n) {
+    buildBalls();
+    for (let i = 0; i < n && i < balls.length; i++) {
+      balls[i].angle = -Math.PI / 4;
+    }
+    running = true;
+  };
+  window.presetBoth = function() {
+    buildBalls();
+    const n = balls.length;
+    const k = Math.max(1, Math.floor(n / 2));
+    for (let i = 0; i < k; i++) balls[i].angle = -Math.PI / 4;
+    for (let i = 0; i < k; i++) balls[n - 1 - i].angle = Math.PI / 4;
+    running = true;
+  };
+
+  // Init
+  buildBalls();
+  // Start with a classic demo
+  balls[0].angle = -Math.PI / 4;
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
+
